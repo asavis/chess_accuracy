@@ -1,6 +1,7 @@
 import io
 import math
 import sys
+import traceback
 
 import chess.engine
 import chess.pgn
@@ -124,6 +125,7 @@ def print_usage():
 
 
 if __name__ == "__main__":
+    is_verbose_arg = False
     try:
         if len(sys.argv) < 4:
             print("Error: at least three arguments are required.")
@@ -134,11 +136,10 @@ if __name__ == "__main__":
         threads_arg = int(sys.argv[2])
         engine_path_arg = sys.argv[3]
         data_file = sys.stdin
-        is_verbose_arg = False
 
         for arg in sys.argv[4:]:
             if arg.startswith("-file="):
-                data_file = arg.split("=")[1]
+                data_file = io.open(arg.split("=")[1], 'r')
             elif arg.startswith("-pgn="):
                 data_file = io.StringIO(arg.split("=")[1])
             elif arg == "-verbose":
@@ -147,4 +148,5 @@ if __name__ == "__main__":
         analyze_pgn(data_file, engine_path_arg, threads_arg, depth_arg, is_verbose_arg)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
+        if is_verbose_arg: traceback.print_exc()
         sys.exit(1)
