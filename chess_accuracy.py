@@ -148,5 +148,6 @@ if __name__ == "__main__":
         analyze_pgn(data_file, engine_path_arg, threads_arg, depth_arg, is_verbose_arg)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
-        if is_verbose_arg: traceback.print_exc()
+        if is_verbose_arg:
+            traceback.print_exc()
         sys.exit(1)
