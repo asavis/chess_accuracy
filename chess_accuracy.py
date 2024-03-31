@@ -40,7 +40,6 @@ def harmonic_mean(values):
 
 def process(file, engine, depth, is_verbose, board):
     accuracies_white, accuracies_black = [], []
-    winning_chances_white, winning_chances_black = [], []
     total_cp_loss_white, total_cp_loss_black = 0, 0
     move_count_white, move_count_black = 0, 0
     prev_evaluation = 17
@@ -72,13 +71,11 @@ def process(file, engine, depth, is_verbose, board):
                     total_cp_loss_white += cp_loss
                     move_count_white += 1
                     accuracies_white.append(accuracy)
-                    winning_chances_white.append(win_after)
                 else:
                     cp_loss = 0 if score < prev_evaluation else score - prev_evaluation
                     total_cp_loss_black += cp_loss
                     move_count_black += 1
                     accuracies_black.append(accuracy)
-                    winning_chances_black.append(win_after)
 
                 if is_verbose:
                     move_color = "White" if board.turn == chess.BLACK else "Black"
