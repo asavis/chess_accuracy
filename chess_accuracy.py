@@ -41,7 +41,6 @@ def harmonic_mean(values):
 def process(file, engine, depth, is_verbose, board):
     accuracies_white, accuracies_black = [], []
     total_cp_loss_white, total_cp_loss_black = 0, 0
-    move_count_white, move_count_black = 0, 0
     prev_evaluation = 17
     move_number = 1
 
@@ -69,12 +68,10 @@ def process(file, engine, depth, is_verbose, board):
                 if board.turn == chess.BLACK:
                     cp_loss = 0 if score > prev_evaluation else prev_evaluation - score
                     total_cp_loss_white += cp_loss
-                    move_count_white += 1
                     accuracies_white.append(accuracy)
                 else:
                     cp_loss = 0 if score < prev_evaluation else score - prev_evaluation
                     total_cp_loss_black += cp_loss
-                    move_count_black += 1
                     accuracies_black.append(accuracy)
 
                 if is_verbose:
@@ -86,8 +83,7 @@ def process(file, engine, depth, is_verbose, board):
                 if board.turn == chess.WHITE:
                     move_number += 1
             node = node.variations[0]
-    return (accuracies_white, accuracies_black, total_cp_loss_white, total_cp_loss_black,
-            move_count_white, move_count_black)
+    return accuracies_white, accuracies_black, total_cp_loss_white, total_cp_loss_black
 
 
 def analyze_pgn(input_source, engine_path, threads, depth, is_verbose):
@@ -95,15 +91,23 @@ def analyze_pgn(input_source, engine_path, threads, depth, is_verbose):
     engine.configure({"Threads": threads})
     board = chess.Board()
 
-    (accuracies_white, accuracies_black, total_cp_loss_white, total_cp_loss_black,
-     move_count_white, move_count_black) = process(input_source, engine, depth, is_verbose, board)
+    (accuracies_white, accuracies_black, total_cp_loss_white, total_cp_loss_black) = (
+        process(input_source, engine, depth, is_verbose, board))
 
     engine.quit()
+
+    move_count_white, move_count_black = len(accuracies_white), len(accuracies_black)
 
     avg_cp_loss_white = total_cp_loss_white / move_count_white if move_count_white else 0
     avg_cp_loss_black = total_cp_loss_black / move_count_black if move_count_black else 0
     accuracy_white = harmonic_mean(accuracies_white) if accuracies_white else 0
     accuracy_black = harmonic_mean(accuracies_black) if accuracies_black else 0
+
+    if avg_cp_loss_white < avg_cp_loss_black:
+        accuracy_black = min(accuracy_black, accuracy_white - 1)
+    else:
+        if avg_cp_loss_white > avg_cp_loss_black:
+            accuracy_white = min(accuracy_white, accuracy_black - 1)
 
     if is_verbose:
         print('Average centipawn loss (White), Accuracy harmonic mean (White), '
