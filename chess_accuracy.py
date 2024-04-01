@@ -138,7 +138,7 @@ if __name__ == "__main__":
             if arg.startswith("-file="):
                 data_file = io.open(arg.split("=")[1], 'r')
             elif arg.startswith("-pgn="):
-                data_file = io.StringIO(arg.split("=")[1])
+                data_file = io.StringIO(arg.split("=", 1)[1])
             elif arg == "-verbose":
                 is_verbose_arg = True
 
