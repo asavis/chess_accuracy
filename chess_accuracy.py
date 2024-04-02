@@ -103,12 +103,6 @@ def analyze_pgn(input_source, engine_path, threads, depth, is_verbose):
     accuracy_white = harmonic_mean(accuracies_white) if accuracies_white else 0
     accuracy_black = harmonic_mean(accuracies_black) if accuracies_black else 0
 
-    if avg_cp_loss_white < avg_cp_loss_black:
-        accuracy_black = min(accuracy_black, accuracy_white - 1)
-    else:
-        if avg_cp_loss_white > avg_cp_loss_black:
-            accuracy_white = min(accuracy_white, accuracy_black - 1)
-
     if is_verbose:
         print('Average centipawn loss (White), Accuracy harmonic mean (White), '
               'Average centipawn loss (Black), Accuracy harmonic mean (Black):')
