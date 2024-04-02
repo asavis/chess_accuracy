@@ -134,7 +134,7 @@ if __name__ == "__main__":
 
         for arg in sys.argv[4:]:
             if arg.startswith("-file="):
-                data_file = io.open(arg.split("=")[1], 'r')
+                data_file = io.open(arg.split("=", 1)[1], 'r')
             elif arg.startswith("-pgn="):
                 data_file = io.StringIO(arg.split("=", 1)[1])
             elif arg == "-verbose":
