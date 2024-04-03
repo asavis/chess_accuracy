@@ -9,8 +9,11 @@ import chess.pgn
 
 def get_eval_str(score, board):
     if score.is_mate():
-        return "Mate in " + str(abs(score.relative.mate())) + " for " + (
-            "White" if board.turn == chess.WHITE else "Black")
+        if score.relative.mate() > 0:
+            mating_side = "White" if board.turn else "Black"
+        else:
+            mating_side = "Black" if board.turn else "White"
+        return "Mate in " + str(abs(score.relative.mate())) + " for " + mating_side
     else:
         return str(score.white().score() / 100.0)
 
