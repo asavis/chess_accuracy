@@ -1,6 +1,6 @@
 # Chess Game Accuracy Analysis Script
 
-This script processes chess PGN (Portable Game Notation) data to compute the average centipawn loss and the harmonic mean of accuracy for both players.
+This script processes chess PGN (Portable Game Notation) data to compute the average centipawn loss and a mean of volatility-weighted mean and harmonic mean (Accuracy) for both players.
 
 ## Requirements
 
@@ -38,7 +38,7 @@ python chess_accuracy.py 16 2 /path/to/stockfish -pgn="1.e4 e5 2.Nf3 Nc6 3.Bb5 a
 You can also pipe PGN data into the script:
 
 ```bash
-cat /path/to/game.pgn | python chess_accuracy.py 16 2 /path/to/stockfish
+cat /path/to/game.pgn | python chess_accuracy.py 18 2 /path/to/stockfish
 ```
 
 ### Verbose Output
@@ -54,7 +54,7 @@ python chess_accuracy.py 16 2 /path/to/stockfish -file=/path/to/game.pgn -verbos
 The script outputs the average centipawn loss and harmonic mean of accuracy for both players, formatted as follows:
 
 ```
-Average centipawn loss (White), Accuracy harmonic mean (White), Average centipawn loss (Black), Accuracy harmonic mean (Black):
+Average centipawn loss (White), Accuracy (White), Average centipawn loss (Black), Accuracy (Black):
 44, 84, 15, 95
 ```
 

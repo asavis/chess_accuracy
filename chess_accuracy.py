@@ -41,11 +41,39 @@ def harmonic_mean(values):
     return n / reciprocal_sum if reciprocal_sum else 0
 
 
+def std_dev(seq):
+    if len(seq) == 0:
+        return 0.5  # Return the minimum weight if sub-sequence is empty
+    mean = sum(seq) / len(seq)
+    variance = sum((x - mean) ** 2 for x in seq) / len(seq)
+    return math.sqrt(variance)
+
+
+def volatility_weighted_mean(accuracies, win_chances, is_white):
+    weights = []
+    for i in range(len(accuracies)):
+        base_index = i * 2 + 1 if is_white else i * 2 + 2
+        start_idx = max(base_index - 2, 0)
+        end_idx = min(base_index + 2, len(win_chances) - 1)
+
+        sub_seq = win_chances[start_idx:end_idx]
+        weight = max(min(std_dev(sub_seq), 12), 0.5)
+        weights.append(weight)
+
+    weighted_sum = sum(accuracies[i] * weights[i] for i in range(len(accuracies)))
+    total_weight = sum(weights)
+    weighted_mean = weighted_sum / total_weight if total_weight else 0
+
+    return weighted_mean
+
+
 def process(file, engine, depth, is_verbose, board):
-    accuracies_white, accuracies_black = [], []
+    accuracies_white, accuracies_black, win_chances = [], [], []
     total_cp_loss_white, total_cp_loss_black = 0, 0
     prev_evaluation = 17
     move_number = 1
+
+    win_chances.append(winning_chances_percent(prev_evaluation))
 
     while True:
         game = chess.pgn.read_game(file)
@@ -60,11 +88,16 @@ def process(file, engine, depth, is_verbose, board):
                 result = engine.analyse(board, chess.engine.Limit(depth=depth))
                 score = result["score"].white().score(mate_score=1000)
 
-                win_before = winning_chances_percent(prev_evaluation)
-                win_after = winning_chances_percent(score)
+                win_before_white = winning_chances_percent(prev_evaluation)
+                win_after_white = winning_chances_percent(score)
+                win_chances.append(win_after_white)
 
                 if board.turn == chess.WHITE:
-                    win_before, win_after = 100 - win_before, 100 - win_after
+                    win_before = 100 - win_before_white
+                    win_after = 100 - win_after_white
+                else:
+                    win_before = win_before_white
+                    win_after = win_after_white
 
                 accuracy = move_accuracy_percent(win_before, win_after)
 
@@ -78,37 +111,46 @@ def process(file, engine, depth, is_verbose, board):
                     accuracies_black.append(accuracy)
 
                 if is_verbose:
-                    move_color = "White" if board.turn == chess.BLACK else "Black"
+                    move_number_str = f'{move_number:3}.' if board.turn == chess.BLACK else "    "
                     print(
-                        f'{move_number}. {move_color} {san_move}, Eval: {get_eval_str(result["score"], board)}, '
-                        f'Centipawn Loss: {cp_loss}, Accuracy: {accuracy:.0f}')
+                        f'{move_number_str} {san_move:5}: Eval: {get_eval_str(result["score"], board):5}, '
+                        f'Centipawn Loss: {cp_loss:3}, Accuracy %: {accuracy:3.0f}, Win %: {win_after_white:2.0f}')
                 prev_evaluation = score
                 if board.turn == chess.WHITE:
                     move_number += 1
             node = node.variations[0]
-    return accuracies_white, accuracies_black, total_cp_loss_white, total_cp_loss_black
+    return accuracies_white, accuracies_black, total_cp_loss_white, total_cp_loss_black, win_chances
 
 
 def analyze_pgn(input_source, engine_path, threads, depth, is_verbose):
+    (harmonic_mean_accuracy_white, weighted_mean_accuracy_white, avg_cp_loss_white, harmonic_mean_accuracy_black,
+     weighted_mean_accuracy_black, avg_cp_loss_black, accuracy_white, accuracy_black) = 0, 0, 0, 0, 0, 0, 0, 0
+
     engine = chess.engine.SimpleEngine.popen_uci(engine_path)
     engine.configure({"Threads": threads})
     board = chess.Board()
 
-    (accuracies_white, accuracies_black, total_cp_loss_white, total_cp_loss_black) = (
+    (accuracies_white, accuracies_black, total_cp_loss_white, total_cp_loss_black, win_chances) = (
         process(input_source, engine, depth, is_verbose, board))
 
     engine.quit()
 
-    move_count_white, move_count_black = len(accuracies_white), len(accuracies_black)
-
-    avg_cp_loss_white = total_cp_loss_white / move_count_white if move_count_white else 0
-    avg_cp_loss_black = total_cp_loss_black / move_count_black if move_count_black else 0
-    accuracy_white = harmonic_mean(accuracies_white) if accuracies_white else 0
-    accuracy_black = harmonic_mean(accuracies_black) if accuracies_black else 0
+    if accuracies_white and accuracies_black:
+        move_count_white, move_count_black = len(accuracies_white), len(accuracies_black)
+        avg_cp_loss_white = total_cp_loss_white / move_count_white
+        avg_cp_loss_black = total_cp_loss_black / move_count_black
+        harmonic_mean_accuracy_white = harmonic_mean(accuracies_white)
+        harmonic_mean_accuracy_black = harmonic_mean(accuracies_black)
+        weighted_mean_accuracy_white = volatility_weighted_mean(accuracies_white, win_chances, True)
+        weighted_mean_accuracy_black = volatility_weighted_mean(accuracies_black, win_chances, False)
+        accuracy_white = (harmonic_mean_accuracy_white + weighted_mean_accuracy_white) / 2
+        accuracy_black = (harmonic_mean_accuracy_black + weighted_mean_accuracy_black) / 2
 
     if is_verbose:
-        print('Average centipawn loss (White), Accuracy harmonic mean (White), '
-              'Average centipawn loss (Black), Accuracy harmonic mean (Black):')
+        print(
+            f'Harmonic White: {harmonic_mean_accuracy_white:.0f}, Weighted White: {weighted_mean_accuracy_white:.0f}, '
+            f'Harmonic Black: {harmonic_mean_accuracy_black:.0f}, Weighted Black: {weighted_mean_accuracy_black:.0f}')
+        print('Average centipawn loss (White), Accuracy (White), Average centipawn loss (Black), Accuracy (Black):')
 
     print(f'{avg_cp_loss_white:.0f}, {accuracy_white:.0f}, {avg_cp_loss_black:.0f}, {accuracy_black:.0f}')
 
