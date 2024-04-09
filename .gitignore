@@ -2,3 +2,4 @@
 /pgn/
 *.iml
 *.ipr
+.vscode/
