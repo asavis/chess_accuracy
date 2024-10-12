@@ -63,3 +63,5 @@ For verbose mode, additional details for each move are printed to the console.
 ## License
 
 MIT
+
+<sub><sup>&copy; 2024 Alexander Stasiv</sup></sub>
