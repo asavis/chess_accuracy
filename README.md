@@ -64,4 +64,4 @@ For verbose mode, additional details for each move are printed to the console.
 
 MIT
 
-<sub><sup>&copy; 2024 Alexander Stasiv</sup></sub>
+<sub><sup>&copy; 2025 Alexander Stasiv</sup></sub>
